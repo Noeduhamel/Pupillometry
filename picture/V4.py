@@ -1,8 +1,8 @@
 #########################################
 #
 # Pupillometry
-# Last Editor : D. Noe
-# Last Edit : 10/03/22
+# Last Editor : Duhamel Noe
+# Last Edit : 31/03/22
 #
 #########################################
 
@@ -12,8 +12,6 @@ from __future__ import print_function
 
 import pylink
 import os
-import platform
-import random
 import time
 import sys
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
@@ -37,7 +35,7 @@ logging.console.setLevel(logging.CRITICAL)
 use_retina = False
 
 # Set this variable to True to run the script in "Dummy Mode"
-dummy_mode = False
+dummy_mode = True
 
 # Set this variable to True to run the task in full screen mode
 # It is easier to debug the script in non-fullscreen mode
@@ -49,6 +47,10 @@ trials = [
     ['cond_2', 'img_2.png'],
     ['cond_3', 'img_3.png'],
     ['cond_4', 'img_4.png'],
+    ]
+
+trials_test = [
+    ['cond_3', 'img_3.png']
     ]
 
 # Set up EDF data file name and local data folder
@@ -257,52 +259,11 @@ genv.setCalibrationSounds('', '', '')
 
 
 # Request Pylink to use the PsychoPy window we opened above for calibration
-pylink.openGraphicsEx(genv) 
+pylink.openGraphicsEx(genv)
 
 
 # define a few helper functions for trial handling
 
-
-
-def reponse():
-    clear_screen(win)
-    
-    question_vivid = visual.TextStim(win, 'Avec quelle netteté avait vous revu la forme ?',
-                          color=genv.getForegroundColor(),
-                          wrapWidth=scn_width/4)
-    
-    
-    vivid= visual.TextStim(win,'Pas d\'image', 'Image floue', 'Image vive', 'Image naturelle', ticks=(1, 2, 3, 4), 
-                           color=genv.getForegroundColor(),
-                           wrapWidth=scn_width/2)
-    
-    question_vivid.draw()
-    vivid.draw()
-    win.flip()
-    
-    
-    get_keypress = False
-    while not get_keypress:
-
-        for keycode, modifier in event.getKeys(modifiers=True):
-            if keycode == '1' or keycode =='&':
-                el_tracker.sendMessage('touche 1')
-                get_keypress = True
-            
-            if keycode == '2' or keycode =='é':
-                el_tracker.sendMessage('touche 2')
-                get_keypress = True
-            
-            if keycode == '3' or keycode =='"':
-                el_tracker.sendMessage('touche 3')
-                get_keypress = True
-            
-            if keycode == '4' or keycode =='\'':
-                el_tracker.sendMessage('touche 4')
-                get_keypress = True
-            
-     
-    
 
 def clear_screen(win):
     """ clear up the PsychoPy window"""
@@ -323,14 +284,57 @@ def show_msg(win, text, wait_for_keypress=True):
 
     # wait indefinitely, terminates upon any key press
     if wait_for_keypress:
-        el_tracker.sendMessage('ca bloque au niveau de la ligne 285 ')
         event.waitKeys()
         clear_screen(win)
+   
+
+def show_question(win, wait_for_keypress=True):
+    """ Show task instructions on screen"""
+
+    msg = visual.TextStim(win, 'avec quelle intancité avez vous vu l\'image rémanente ?',
+                          color=genv.getForegroundColor(),
+                          wrapWidth=scn_width/3)
+    
+    reponse = visual.TextStim(win,'pas d\'image                         image net', 
+                              color=genv.getForegroundColor(),
+                              wrapWidth=scn_width*2/3) 
+    clear_screen(win)
+    msg.draw()
+    reponse.draw()
+    
+    win.flip()
+    
+    get_keypress = False
+    while not get_keypress:
+    # wait indefinitely, terminates upon any key press
+        for keycode, modifier in event.getKeys(modifiers=True):
+            # Stop stimulus presentation when the key is pressed
+            if keycode == '1' or keycode == '&':
+                # send over a message to log the key press
+                el_tracker.sendMessage('il a appuyer sur le bouton du clavier numero 1')
+                get_keypress=True
+               
+            if keycode == '2' or keycode == 'é':
+                # send over a message to log the key press
+                el_tracker.sendMessage('il a appuyer sur le bouton du clavier numero 2')
+                get_keypress=True
+                
+            if keycode == '3' or keycode == '"':
+                # send over a message to log the key press
+                el_tracker.sendMessage('il a appuyer sur le bouton du clavier numero 3')
+                get_keypress=True
+                 
+            if keycode == '4' or keycode == '\'':
+                # send over a message to log the key press
+                el_tracker.sendMessage('il a appuyer sur le bouton du clavier numero 4')
+                get_keypress=True
+                
+      
+    clear_screen(win)
 
 
 def terminate_task():
     """ Terminate the task gracefully and retrieve the EDF data file
-
     file_to_retrieve: The EDF on the Host that we would like to download
     win: the current window used by the experimental script
     """
@@ -402,7 +406,6 @@ def abort_trial():
 
 def run_trial(trial_pars, trial_index):
     """ Helper function specifying the events that will occur in a single trial
-
     trial_pars - a list containing trial parameters, e.g.,
                 ['cond_1', 'img_1.jpg']
     trial_index - record the order of trial presentation in the task
@@ -452,36 +455,42 @@ def run_trial(trial_pars, trial_index):
     #             crop_width, crop_height, x, y on the Host, drawing options
     #
     # Use the code commented below to convert the image and send the backdrop
-    im = Image.open('images' + os.sep + pic)  # read image with PIL
-    im = im.resize((scn_width, scn_height))
-    img_pixels = im.load()  # access the pixel data of the image
-    im_pixels = [[img_pixels[i, j] for i in range(scn_width)]
+    perception = Image.open('images' + os.sep + pic)  # read image with PIL
+    rest = Image.open('images' + os.sep + 'repos.png') 
+    baseline = Image.open('images' + os.sep + 'base.png') 
+        
+    
+    
+    perception = perception.resize((scn_width, scn_height))
+    rest = rest.resize((scn_width, scn_height))
+    baseline = baseline.resize((scn_width, scn_height))
+    
+    img_pixels_perception = perception.load()  # access the pixel data of the image
+    img_pixels_rest = rest.load()
+    img_pixels_baseline = baseline.load()
+    
+    pixels_perception = [[img_pixels_perception[i, j] for i in range(scn_width)]
               for j in range(scn_height)]
-   
-    repos_pixels = im.load()
-    rep_pixels = [[repos_pixels[i, j] for i in range(scn_width)]
-              for j in range(scn_height)]
-    
-   
-    base_pixels = im.load()
-    ba_pixels = [[base_pixels[i, j] for i in range(scn_width)]
-              for j in range(scn_height)]
-    
-    el_tracker.bitmapBackdrop(scn_width, scn_height, im_pixels,
-                              0, 0, scn_width, scn_height,
-                              0, 0, pylink.BX_MAXCONTRAST)
-    
-    el_tracker.bitmapBackdrop(scn_width, scn_height, rep_pixels,
-                              0, 0, scn_width, scn_height,
-                              0, 0, pylink.BX_MAXCONTRAST)
-    
-    el_tracker.bitmapBackdrop(scn_width, scn_height, ba_pixels,
+    el_tracker.bitmapBackdrop(scn_width, scn_height, pixels_perception,
                               0, 0, scn_width, scn_height,
                               0, 0, pylink.BX_MAXCONTRAST)
     
     
-   
+    pixels_rest = [[img_pixels_rest[i, j] for i in range(scn_width)]
+              for j in range(scn_height)]
+    el_tracker.bitmapBackdrop(scn_width, scn_height, pixels_rest,
+                              0, 0, scn_width, scn_height,
+                              0, 0, pylink.BX_MAXCONTRAST)
+    
+    
+    pixels_baseline = [[img_pixels_baseline[i, j] for i in range(scn_width)]
+              for j in range(scn_height)]
+    el_tracker.bitmapBackdrop(scn_width, scn_height, pixels_baseline,
+                              0, 0, scn_width, scn_height,
+                              0, 0, pylink.BX_MAXCONTRAST)
+    
 
+    
     # OPTIONAL: draw landmarks and texts on the Host screen
     # In addition to backdrop image, You may draw simples on the Host PC to use
     # as landmarks. For illustration purpose, here we draw some texts and a box
@@ -544,8 +553,88 @@ def run_trial(trial_pars, trial_index):
     # Allocate some time for the tracker to cache some samples
     pylink.pumpDelay(100)
 
+
+    # Image base 
+     # show the image, and log a message to mark the onset of the image
+    base.draw()
+    win.flip
+    el_tracker.sendMessage('base_onset')
+    base_onset_time = core.getTime() 
+    
+    # Send a message to clear the Data Viewer screen, get it ready for
+    # drawing the pictures during visualization
+    bgcolor_RGB = (116, 116, 116)
+    el_tracker.sendMessage('!V CLEAR %d %d %d' % bgcolor_RGB)
+ 
+    # send over a message to specify where the image is stored relative
+    # to the EDF data file, see Data Viewer User Manual, "Protocol for
+    # EyeLink Data to Viewer Integration"
+    bg_base = '../../images/' + 'base.png'
+    baseload_msg = '!V IMGLOAD CENTER %s %d %d %d %d' % (bg_base,
+                                                     int(scn_width/2.0),
+                                                     int(scn_height/2.0),
+                                                     int(scn_width),
+                                                     int(scn_height))
+    el_tracker.sendMessage(baseload_msg)
+    # send interest area messages to record in the EDF data file
+    # here we draw a rectangular IA, for illustration purposes
+    # format: !V IAREA RECTANGLE <id> <left> <top> <right> <bottom> [label]
+    # for all supported interest area commands, see the Data Viewer Manual,
+    # "Protocol for EyeLink Data to Viewer Integration"
+    ia_pars = (1, left, top, right, bottom, 'screen_center')
+    el_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % ia_pars)
+
+    # show the image for 1-secs or until the SPACEBAR is pressed
+    event.clearEvents()  # clear cached PsychoPy events
+    RT_base = -1  # keep track of the response time
+    get_keypress = False
+    while not get_keypress:
+        # present the picture for a maximum of 1 seconds
+        if core.getTime() - base_onset_time >= 1.0:
+            el_tracker.sendMessage('fin phase perception')   
+            break
+
+        # abort the current trial if the tracker is no longer recording
+        error = el_tracker.isRecording()
+        if error is not pylink.TRIAL_OK:
+            el_tracker.sendMessage('tracker_disconnected')
+            abort_trial()
+            return error
+        
+        
+        
+        # check keyboard events
+        for keycode, modifier in event.getKeys(modifiers=True):
+            # Stop stimulus presentation when the spacebar is pressed
+            if keycode == 'space':
+                # send over a message to log the key press
+                el_tracker.sendMessage('key_pressed')
+
+                # get response time in ms, PsychoPy report time in sec
+                RT_base = int((core.getTime() - base_onset_time)*1000)
+                get_keypress = True
+
+            # Abort a trial if "ESCAPE" is pressed
+            if keycode == 'escape':
+                el_tracker.sendMessage('trial_skipped_by_user')
+                # clear the screen
+                clear_screen(win)
+                # abort trial
+                abort_trial()
+                return pylink.SKIP_TRIAL
+
+            # Terminate the task if Ctrl-c
+            if keycode == 'c' and (modifier['ctrl'] is True):
+                el_tracker.sendMessage('terminated_by_user')
+                terminate_task()
+                return pylink.ABORT_EXPT
+        
+        
+
+
+
+    #image triangle
     # show the image, and log a message to mark the onset of the image
-    clear_screen(win)
     img.draw()
     win.flip()
     el_tracker.sendMessage('image_onset')
@@ -577,21 +666,21 @@ def run_trial(trial_pars, trial_index):
 
     # show the image for 5-secs or until the SPACEBAR is pressed
     event.clearEvents()  # clear cached PsychoPy events
-    RT = -1  # keep track of the response time
+    RT_img = -1  # keep track of the response time
     get_keypress = False
     while not get_keypress:
         # present the picture for a maximum of 5 seconds
         if core.getTime() - img_onset_time >= 5.0:
             el_tracker.sendMessage('fin phase perception')   
             break
-        
+
         # abort the current trial if the tracker is no longer recording
         error = el_tracker.isRecording()
         if error is not pylink.TRIAL_OK:
             el_tracker.sendMessage('tracker_disconnected')
             abort_trial()
             return error
-
+        
         # check keyboard events
         for keycode, modifier in event.getKeys(modifiers=True):
             # Stop stimulus presentation when the spacebar is pressed
@@ -600,7 +689,7 @@ def run_trial(trial_pars, trial_index):
                 el_tracker.sendMessage('key_pressed')
 
                 # get response time in ms, PsychoPy report time in sec
-                RT = int((core.getTime() - img_onset_time)*1000)
+                RT_img = int((core.getTime() - img_onset_time)*1000)
                 get_keypress = True
 
             # Abort a trial if "ESCAPE" is pressed
@@ -617,32 +706,32 @@ def run_trial(trial_pars, trial_index):
                 el_tracker.sendMessage('terminated_by_user')
                 terminate_task()
                 return pylink.ABORT_EXPT
-   
-    
-   #repos
-    # show the image, and log a message to mark the onset of the image
-    clear_screen(win)
-    repos.draw()
-    win.flip()
-    el_tracker.sendMessage('repos_onset')
-    repos_onset_time = core.getTime()# record the image onset time
 
+    
+
+
+    # Image repos 
+    # show the image, and log a message to mark the onset of the image
+    repos.draw()
+    win.flip
+    el_tracker.sendMessage('repos_onset')
+    repos_onset_time = core.getTime() 
+    
     # Send a message to clear the Data Viewer screen, get it ready for
     # drawing the pictures during visualization
     bgcolor_RGB = (116, 116, 116)
     el_tracker.sendMessage('!V CLEAR %d %d %d' % bgcolor_RGB)
-
+ 
     # send over a message to specify where the image is stored relative
     # to the EDF data file, see Data Viewer User Manual, "Protocol for
     # EyeLink Data to Viewer Integration"
-    bg_image = '../../images/' + pic
-    imgload_msg = '!V IMGLOAD CENTER %s %d %d %d %d' % (bg_image,
-                                                        int(scn_width/2.0),
-                                                        int(scn_height/2.0),
-                                                        int(scn_width),
-                                                        int(scn_height))
-    el_tracker.sendMessage(imgload_msg)
-
+    bg_repos = '../../images/' + 'repos.png'
+    reposload_msg = '!V IMGLOAD CENTER %s %d %d %d %d' % (bg_repos,
+                                                     int(scn_width/2.0),
+                                                     int(scn_height/2.0),
+                                                     int(scn_width),
+                                                     int(scn_height))
+    el_tracker.sendMessage(reposload_msg)
     # send interest area messages to record in the EDF data file
     # here we draw a rectangular IA, for illustration purposes
     # format: !V IAREA RECTANGLE <id> <left> <top> <right> <bottom> [label]
@@ -651,14 +740,14 @@ def run_trial(trial_pars, trial_index):
     ia_pars = (1, left, top, right, bottom, 'screen_center')
     el_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % ia_pars)
 
-    # show the image for 5-secs or until the SPACEBAR is pressed
+    # show the image for 10-secs or until the SPACEBAR is pressed
     event.clearEvents()  # clear cached PsychoPy events
-    RT = -1  # keep track of the response time
+    RT_repos = -1  # keep track of the response time
     get_keypress = False
     while not get_keypress:
         # present the picture for a maximum of 10 seconds
         if core.getTime() - repos_onset_time >= 10.0:
-            el_tracker.sendMessage('fin phase repos') 
+            el_tracker.sendMessage('fin phase repos')   
             break
 
         # abort the current trial if the tracker is no longer recording
@@ -667,7 +756,8 @@ def run_trial(trial_pars, trial_index):
             el_tracker.sendMessage('tracker_disconnected')
             abort_trial()
             return error
-
+        
+        
         # check keyboard events
         for keycode, modifier in event.getKeys(modifiers=True):
             # Stop stimulus presentation when the spacebar is pressed
@@ -676,7 +766,7 @@ def run_trial(trial_pars, trial_index):
                 el_tracker.sendMessage('key_pressed')
 
                 # get response time in ms, PsychoPy report time in sec
-                RT = int((core.getTime() - img_onset_time)*1000)
+                RT_repos = int((core.getTime() - repos_onset_time)*1000)
                 get_keypress = True
 
             # Abort a trial if "ESCAPE" is pressed
@@ -693,30 +783,32 @@ def run_trial(trial_pars, trial_index):
                 el_tracker.sendMessage('terminated_by_user')
                 terminate_task()
                 return pylink.ABORT_EXPT
+        
+        
+  
     
+    # Image base 
     # show the image, and log a message to mark the onset of the image
-    clear_screen(win)
     base.draw()
-    win.flip()
-    el_tracker.sendMessage('repos_onset')
-    base_onset_time = core.getTime()# record the image onset time
-
+    win.flip
+    el_tracker.sendMessage('base_onset')
+    base2_onset_time = core.getTime() 
+    
     # Send a message to clear the Data Viewer screen, get it ready for
     # drawing the pictures during visualization
     bgcolor_RGB = (116, 116, 116)
     el_tracker.sendMessage('!V CLEAR %d %d %d' % bgcolor_RGB)
-
+ 
     # send over a message to specify where the image is stored relative
     # to the EDF data file, see Data Viewer User Manual, "Protocol for
     # EyeLink Data to Viewer Integration"
-    bg_image = '../../images/' + pic
-    imgload_msg = '!V IMGLOAD CENTER %s %d %d %d %d' % (bg_image,
-                                                        int(scn_width/2.0),
-                                                        int(scn_height/2.0),
-                                                        int(scn_width),
-                                                        int(scn_height))
-    el_tracker.sendMessage(imgload_msg)
-
+    bg_base = '../../images/' + 'base.png'
+    baseload_msg = '!V IMGLOAD CENTER %s %d %d %d %d' % (bg_base,
+                                                     int(scn_width/2.0),
+                                                     int(scn_height/2.0),
+                                                     int(scn_width),
+                                                     int(scn_height))
+    el_tracker.sendMessage(baseload_msg)
     # send interest area messages to record in the EDF data file
     # here we draw a rectangular IA, for illustration purposes
     # format: !V IAREA RECTANGLE <id> <left> <top> <right> <bottom> [label]
@@ -725,14 +817,14 @@ def run_trial(trial_pars, trial_index):
     ia_pars = (1, left, top, right, bottom, 'screen_center')
     el_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % ia_pars)
 
-    # show the image for 5-secs or until the SPACEBAR is pressed
+    # show the image for 6-secs or until the SPACEBAR is pressed
     event.clearEvents()  # clear cached PsychoPy events
-    RT = -1  # keep track of the response time
+    RT_base2 = -1  # keep track of the response time
     get_keypress = False
     while not get_keypress:
-        # present the repos phase for a maximum of 6 seconds
-        if core.getTime() - base_onset_time >= 6.0:
-            el_tracker.sendMessage('fin phase repos') 
+        # present the picture for a maximum of 5 seconds
+        if core.getTime() - base2_onset_time >= 6.0:
+            el_tracker.sendMessage('fin phase perception')   
             break
 
         # abort the current trial if the tracker is no longer recording
@@ -740,7 +832,10 @@ def run_trial(trial_pars, trial_index):
         if error is not pylink.TRIAL_OK:
             el_tracker.sendMessage('tracker_disconnected')
             abort_trial()
-            return error
+            return error    
+    
+    
+
 
         # check keyboard events
         for keycode, modifier in event.getKeys(modifiers=True):
@@ -750,7 +845,7 @@ def run_trial(trial_pars, trial_index):
                 el_tracker.sendMessage('key_pressed')
 
                 # get response time in ms, PsychoPy report time in sec
-                RT = int((core.getTime() - img_onset_time)*1000)
+                RT_base2 = int((core.getTime() - base2_onset_time)*1000)
                 get_keypress = True
 
             # Abort a trial if "ESCAPE" is pressed
@@ -767,13 +862,6 @@ def run_trial(trial_pars, trial_index):
                 el_tracker.sendMessage('terminated_by_user')
                 terminate_task()
                 return pylink.ABORT_EXPT
-    
-    
-    
-   #function reponse for the vividness of the image
-    reponse()
-
-
 
     # clear the screen
     clear_screen(win)
@@ -789,11 +877,17 @@ def run_trial(trial_pars, trial_index):
     # Viewer User Manual, "Protocol for EyeLink Data to Viewer Integration"
     el_tracker.sendMessage('!V TRIAL_VAR condition %s' % cond)
     el_tracker.sendMessage('!V TRIAL_VAR image %s' % pic)
-    el_tracker.sendMessage('!V TRIAL_VAR RT %d' % RT)
+    el_tracker.sendMessage('!V TRIAL_VAR RT_base %d' % RT_base)
+    el_tracker.sendMessage('!V TRIAL_VAR RT_img %d' % RT_img)
+    el_tracker.sendMessage('!V TRIAL_VAR RT_repos %d' % RT_repos)
+    el_tracker.sendMessage('!V TRIAL_VAR RT_base2 %d' % RT_base2)
+
 
     # send a 'TRIAL_RESULT' message to mark the end of trial, see Data
     # Viewer User Manual, "Protocol for EyeLink Data to Viewer Integration"
     el_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_OK)
+    
+    show_question(win, wait_for_keypress=False)
 
 
 
@@ -801,23 +895,35 @@ def run_trial(trial_pars, trial_index):
 # Step 5: Set up the camera and calibrate the tracker
 
 # Show the task instructions
-task_msg = 'In the task, you may press the SPACEBAR to end a trial\n' + \
-    '\nPress Ctrl-C to if you need to quit the task early\n'
-if dummy_mode:
-    task_msg = task_msg + '\nNow, press ENTER to start the task'
-else:
-    task_msg = task_msg + '\nNow, press ENTER twice to calibrate tracker'
-show_msg(win, task_msg)
+intro='Vous allez participer à un test de visualisation mentale. Ce test se décompose en 4 phases.\n\n1) Vous allez voir une forme géométrique apparaître au centre de l\'écran.\n2) La forme va disparaître et un écran noir va la remplacer.\n3) Lorsque l\'écran redeviendra gris et que vous entendrez le signal sonore, vous allez devoir vous remémorer mentalement la forme vue lors de la première étape tout en gardant les yeux fixés sur la croix centrale. La fin de cette phase de visualisation mentale sera marquée par le même signal sonore qu\'au début.\n4) Vous devrez répondre à 2 questions, la première portant sur la netteté de votre visualisation et la seconde pour déclarer si vous avez eu un effet d\'image rémanente.\n\n(Appuyer sur la barre d\'espace pour continuer)'
+show_msg(win, intro)
+
+#task_msg = 'In the task, you may press the SPACEBAR to end a trial\n' + \
+   # '\nPress Ctrl-C to if you need to quit the task early\n'
+ 
 
 # skip this step if running the script in Dummy Mode
 if not dummy_mode:
+    task_msg = '\nNous allons devoir calibrer la machine. \n\nMerci de fixer le point qui va apparaitre sur l\'écran et de le suivre du regard.\n\n(Appuyer 2 fois sur ENTER pour continuer)'
+    show_msg(win, task_msg)
     try:
-        el_tracker.doTrackerSetup()
+        #start calibration
+        el_tracker.doTrackerSetup() 
     except RuntimeError as err:
         print('ERROR:', err)
         el_tracker.exitCalibration()
 
-# Step 6: Run the experimental trials, index all the trials
+# Step 6: Run the test experimental trial
+
+phase_test_msg='Vous allez maintenant avoir une première phase de test où la phase de repos sera grise.\n\nAppuyez sur ENTER, pour commencer'
+show_msg(win, phase_test_msg)
+run_trial(trials_test, 1)
+
+text = 'Le premier test est maintenant terminé !\n\nVous allez maintenant avoir un test similaire où la phase de repos sera un masque de bruit blanc.\n\n(Appuyer sur ENTRÉE pour continuer)'
+show_msg(win, text)
+
+# Step 7: Run the experimental trials, index all the trials
+
 
 # construct a list of X trials
 test_list = trials[:]*2
@@ -829,5 +935,5 @@ for trial_pars in test_list:
     run_trial(trial_pars, trial_index)
     trial_index += 1
 
-# Step 7: disconnect, download the EDF file, then terminate the task
+# Step 8: disconnect, download the EDF file, then terminate the task
 terminate_task()
